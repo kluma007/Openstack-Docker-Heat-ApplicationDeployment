@@ -1,0 +1,32 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Heat template for deploying a 3 tier application
+
+resources:
+  blog:
+    type: DockerInc::Docker::Container
+    depends_on: [database]
+    properties:
+      image: myuser/wordpress
+      docker_endpoint: 'tcp://127.0.0.1:8888'
+      cmd: ['/run.sh']
+      env:
+        - DB_PASSWORD=123
+        - {"Fn::Join": ["=", ["DB_PORT_3306_TCP_ADDR", { get_attr: [database, network_ip]}]]}	
+ 
+  database:
+        type: DockerInc::Docker::Container
+        properties:
+            image: myuser/mysql
+            docker_endpoint: 'tcp://127.0.0.1:8888'
+            cmd: ['/run.sh']
+  
+outputs:
+  info:
+    description: IP address where the network is hosted
+    value:
+      str_replace:
+        template: http://host
+        params:
+          host: { get_attr: [blog, network_ip] }
